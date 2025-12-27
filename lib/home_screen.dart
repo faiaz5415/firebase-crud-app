@@ -1,117 +1,154 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'sign_in_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  List<FootballMatch> _matchList = [];
-  bool _inprogress = false;
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _getFootballMatches();
-  // }
-  //
-  // Future<void> _getFootballMatches() async {
-  //   _inprogress = true;
-  //   setState(() {});
-  //   final snapshots = await FirebaseFirestore.instance
-  //       .collection('football')
-  //       .get();
-  //   for (QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshots.docs) {
-  //     _matchList.add(
-  //       FootballMatch(
-  //         id: doc.id,
-  //         team1: doc.get("team1_name"),
-  //         team1Score: doc.get("team1_score"),
-  //         team2: doc.get("team2_name"),
-  //         team2Score: doc.get("team2_score"),
-  //         isRunning: doc.get("is_running"),
-  //         winner: doc.get("winner_team"),
-  //       ),
-  //     );
-  //   }
-  //   _inprogress = false;
-  //   setState(() {});
-  // }
+class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController _emailTEController = TextEditingController();
+  final TextEditingController _passwordTEController = TextEditingController();
+  final TextEditingController _confirmPasswordTEController = TextEditingController();
+
+  final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Live Scores")),
-      body: StreamBuilder(
-        stream: FirebaseFirestore.instance.collection('football').snapshots(),
-        builder: (context, snapshots) {
-          if (snapshots.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshots.hasError) {
-            return Center(child: Text(snapshots.error.toString()));
-          } else if (snapshots.hasData) {
-             _matchList.clear();
-            for (QueryDocumentSnapshot<Map<String, dynamic>> doc
-            in snapshots.data!.docs) {
-              _matchList.add(
-                FootballMatch(
-                  id: doc.id,
-                  team1: doc.get("team1_name"),
-                  team1Score: doc.get("team1_score"),
-                  team2: doc.get("team2_name"),
-                  team2Score: doc.get("team2_score"),
-                  isRunning: doc.get("is_running"),
-                  winner: doc.get("winner_team"),
+      appBar: AppBar(title: const Text("Sign Up")),
+      // SingleChildScrollView prevents overflow errors when the keyboard pops up
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formkey,
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                TextFormField(
+                  controller: _emailTEController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    hintText: "Enter your email",
+                    border: OutlineInputBorder(), // Makes the field visible
+                  ),
+                  validator: (String? value) {
+                    if (value?.trim().isEmpty ?? true) {
+                      return "Enter a valid Email";
+                    }
+                    return null;
+                  },
                 ),
-              );
-            }
-            return ListView.builder(
-              itemCount: _matchList.length,
-              itemBuilder: (context, index) {
-                final footballMatch = _matchList[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: footballMatch.isRunning
-                        ? Colors.green
-                        : Colors.grey,
-                    radius: 8,
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _passwordTEController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Password",
+                    hintText: "Enter your password",
+                    border: OutlineInputBorder(), // Added border for visibility
                   ),
-                  title: Text("${footballMatch.team1} vs ${footballMatch.team2}"),
-                  trailing: Text(
-                    "${footballMatch.team1Score} - ${footballMatch.team2Score}",
+                  validator: (String? value) {
+                    if (value?.trim().isEmpty ?? true) {
+                      return "Password cannot be empty";
+                    }
+                    if (value!.length < 6) {
+                      return "Password must be at least 6 characters long";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _confirmPasswordTEController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Confirm Password",
+                    hintText: "Re-enter your password",
+                    border: OutlineInputBorder(), // Added border for visibility
                   ),
-                  subtitle: Text(
-                    "Winner: ${footballMatch.isRunning ? 'pending' : footballMatch.winner}",
+                  validator: (String? value) {
+                    if (value?.trim().isEmpty ?? true) {
+                      return "Confirm password cannot be empty";
+                    }
+                    if (value != _passwordTEController.text) {
+                      return "Passwords do not match";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _onTapSubmitButton,
+                    child: const Text("Submit"),
                   ),
-                );
-              },
-            );
-          }
-            return SizedBox();
-        },
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SignInScreen()),
+                    );
+                  },
+                  child: const Text("Already have an account? Sign In"),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
-}
 
-class FootballMatch {
-  final String id;
-  final String team1;
-  final int team1Score;
-  final String team2;
-  final int team2Score;
-  final bool isRunning;
-  final String winner;
+  void _onTapSubmitButton() {
+    if (_formkey.currentState!.validate()) {
+      _createNewUser();
+    }
+  }
 
-  FootballMatch({
-    required this.id,
-    required this.team1,
-    required this.team1Score,
-    required this.team2,
-    required this.team2Score,
-    required this.isRunning,
-    required this.winner,
-  });
+  Future<void> _createNewUser() async {
+    try {
+      UserCredential user = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailTEController.text.trim(),
+        password: _passwordTEController.text.trim(),
+      );
+
+      if (user.user?.uid != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("New User Registered Successfully")),
+          );
+          // The app will auto-navigate if you updated app.dart
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Authentication Failed")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("An unexpected error occurred")),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailTEController.dispose();
+    _passwordTEController.dispose();
+    _confirmPasswordTEController.dispose();
+    super.dispose();
+  }
 }

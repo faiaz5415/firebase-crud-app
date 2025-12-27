@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crud_app/home_screen.dart';
+import 'package:firebase_crud_app/sign_up_screen.dart';
 import 'package:flutter/material.dart';
 
 class FootballLiveScoreApp extends StatefulWidget {
@@ -12,7 +14,10 @@ class _FootballLiveScoreAppState extends State<FootballLiveScoreApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomeScreen(),
+      debugShowCheckedModeBanner: false,
+      home: FirebaseAuth.instance.currentUser != null
+          ? const HomeScreen()
+          : const SignUpScreen(),
     );
   }
 }
